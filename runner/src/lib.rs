@@ -2,6 +2,7 @@
 
 use qtv_account::{derive, Tier};
 use qtv_codec::{from_bytes, to_bytes};
+use qtv_crypto::sha3;
 use qtv_tx::{sign, Body, Call};
 
 pub mod json;
@@ -141,4 +142,45 @@ pub fn check_idfmt() -> Result<(), String> {
     same("idfmt.qst", qtv_idfmt::render_state(&input).unwrap(), str_field(vector, "qst"))?;
     same("idfmt.qcid", qtv_idfmt::render_cid(&input).unwrap(), str_field(vector, "qcid"))?;
     same("idfmt.qpf", qtv_idfmt::render_proof(&input).unwrap(), str_field(vector, "qpf"))
+}
+
+pub fn check_hostile() -> Result<(), String> {
+    let hex_hash = include_str!("../../vectors/hostile/idfmt.hex_hash_rejected.json");
+    let offered = str_field(hex_hash, "input");
+    let refused = qtv_idfmt::parse_address(&offered).is_err()
+        && qtv_idfmt::parse_secret(&offered).is_err()
+        && qtv_idfmt::parse_tx(&offered).is_err()
+        && qtv_idfmt::parse_block(&offered).is_err()
+        && qtv_idfmt::parse_state(&offered).is_err()
+        && qtv_idfmt::parse_cid(&offered).is_err()
+        && qtv_idfmt::parse_proof(&offered).is_err();
+    if !refused {
+        return Err("hostile.hex_hash was parsed by an identifier family".into());
+    }
+
+    let floor = include_str!("../../vectors/hostile/address.below_floor_rejected.json");
+    let payload = unhex(&str_field(floor, "payload"));
+    if payload.len() >= qtv_idfmt::KEY_FLOOR {
+        return Err("hostile.floor payload reaches the floor".into());
+    }
+    if qtv_idfmt::render_address(&payload).is_ok() || qtv_idfmt::render_secret(&payload).is_ok() {
+        return Err("hostile.floor payload rendered below the floor".into());
+    }
+
+    let keccak = include_str!("../../vectors/hostile/crypto.keccak_not_sha3.json");
+    let recomputed = hex(&sha3::sha3_256(b""));
+    same("hostile.sha3_empty", recomputed.clone(), str_field(keccak, "sha3_256_empty"))?;
+    let classical = str_field(keccak, "keccak256_empty");
+    if recomputed == classical {
+        return Err("hostile.keccak the stack digest equals the classical digest".into());
+    }
+    Ok(())
+}
+
+pub fn check_all() -> Result<(), String> {
+    check_codec()?;
+    check_address()?;
+    check_transaction()?;
+    check_idfmt()?;
+    check_hostile()
 }
