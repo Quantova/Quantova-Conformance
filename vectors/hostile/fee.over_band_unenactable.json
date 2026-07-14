@@ -1,0 +1,9 @@
+{
+  "area": "fee",
+  "case": "over_band_unenactable",
+  "spec": "SPEC-economics, the ceiling is a runtime invariant",
+  "description": "A fee schedule or a rate that would produce a fee above USD 0.0010 is unenactable, refused the way an over ceiling mint is refused.",
+  "fee_usd": 0.0015,
+  "ceiling_usd": 0.0010,
+  "expected": "unenactable"
+}
