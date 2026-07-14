@@ -1,0 +1,8 @@
+{
+  "area": "consensus",
+  "case": "non_mldsa_attestation_rejected",
+  "spec": "SPEC-consensus-qorus, consensus uses one signature scheme",
+  "description": "A validator attestation whose scheme identifier is not machine lattice is rejected. Consensus accepts machine lattice signatures only.",
+  "scheme_id": "0x02",
+  "expected": "rejected"
+}
