@@ -2,6 +2,7 @@
 
 use qtv_account::{derive, Tier};
 use qtv_codec::{from_bytes, to_bytes};
+use qtv_tx::{sign, Body, Call};
 
 pub mod json;
 
@@ -104,4 +105,28 @@ pub fn check_address() -> Result<(), String> {
         account.address_at(Tier::Compact),
         str_field(vector, "compact"),
     )
+}
+
+pub fn check_transaction() -> Result<(), String> {
+    let vector = include_str!("../../vectors/transaction.transfer.json");
+    let seed = seed32(&str_field(vector, "master_seed"));
+    let sender_account = derive(&seed, num_field(vector, "sender_index") as u64);
+    let target = derive(&seed, num_field(vector, "target_index") as u64).address_at(Tier::Canonical);
+    let sender = sender_account.address_at(Tier::Canonical);
+    same("transaction.sender", sender.clone(), str_field(vector, "sender"))?;
+    same("transaction.target", target.clone(), str_field(vector, "target"))?;
+
+    let args = unhex(&str_field(vector, "args"));
+    let call = Call::new(target, args);
+    let body = Body::new(
+        sender,
+        num_field(vector, "nonce") as u64,
+        num_field(vector, "gas_limit") as u64,
+        num_field(vector, "fee"),
+        call,
+    );
+    same("transaction.body_bytes", hex(&to_bytes(&body)), str_field(vector, "body_bytes"))?;
+
+    let wrapper = sign(&sender_account, &body);
+    same("transaction.tx_id", wrapper.id(), str_field(vector, "tx_id"))
 }
