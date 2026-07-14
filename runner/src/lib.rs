@@ -1,5 +1,6 @@
 //! Reproduces the frozen conformance vectors with the reference crates and
 
+use qtv_account::{derive, Tier};
 use qtv_codec::{from_bytes, to_bytes};
 
 pub mod json;
@@ -27,6 +28,13 @@ fn same<T: PartialEq + std::fmt::Debug>(label: &str, got: T, want: T) -> Result<
     } else {
         Err(format!("{label} recomputed {got:?} but the vector holds {want:?}"))
     }
+}
+
+fn seed32(text: &str) -> [u8; 32] {
+    let raw = unhex(text);
+    let mut seed = [0u8; 32];
+    seed.copy_from_slice(&raw);
+    seed
 }
 
 const CODEC: [&str; 6] = [
@@ -78,4 +86,22 @@ pub fn check_codec() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+pub fn check_address() -> Result<(), String> {
+    let vector = include_str!("../../vectors/address.derivation.json");
+    let seed = seed32(&str_field(vector, "master_seed"));
+    let index = num_field(vector, "index") as u64;
+    let account = derive(&seed, index);
+    same("address.scheme", account.scheme() as u128, num_field(vector, "scheme"))?;
+    same(
+        "address.canonical",
+        account.address_at(Tier::Canonical),
+        str_field(vector, "canonical"),
+    )?;
+    same(
+        "address.compact",
+        account.address_at(Tier::Compact),
+        str_field(vector, "compact"),
+    )
 }
