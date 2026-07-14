@@ -1,0 +1,9 @@
+{
+  "area": "address",
+  "case": "below_floor_rejected",
+  "spec": "SPEC-idfmt section 2",
+  "description": "A payload of 23 bytes falls below the 24 byte security floor, so the address family refuses to render it.",
+  "floor": 24,
+  "payload": "0000000000000000000000000000000000000000000000",
+  "expected": "rejected"
+}
