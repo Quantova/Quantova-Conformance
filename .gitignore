@@ -1,4 +1,6 @@
 /target
+runner/target/
+Cargo.lock
 **/*.rs.bk
 .DS_Store
 
