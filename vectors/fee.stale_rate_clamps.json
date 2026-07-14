@@ -1,0 +1,7 @@
+{
+  "area": "fee",
+  "case": "stale_rate_clamps",
+  "spec": "SPEC-economics, the fee edge cases",
+  "description": "When the rate is older than the freshness window the fee is clamped to the band using the last known rate. A drift toward a cheaper fee is allowed and a fee above the band is impossible.",
+  "expected": "clamped within the band, never above"
+}
