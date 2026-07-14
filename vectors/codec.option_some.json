@@ -1,0 +1,7 @@
+{
+  "area": "codec",
+  "case": "option_some",
+  "kind": "option_some_u32",
+  "input": 16909060,
+  "bytes": "0104030201"
+}

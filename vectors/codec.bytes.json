@@ -1,0 +1,7 @@
+{
+  "area": "codec",
+  "case": "bytes",
+  "kind": "bytes",
+  "input": "7175616e746f7661",
+  "bytes": "08000000000000007175616e746f7661"
+}
