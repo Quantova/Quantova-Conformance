@@ -1,0 +1,13 @@
+[package]
+name = "qtv-conformance-runner"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+publish = false
+
+[dependencies]
+qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", tag = "v0.1.0" }
+qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", tag = "v0.1.0" }
+qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", tag = "v0.1.0" }
+qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", tag = "v0.1.0" }
+qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", tag = "v0.1.0" }
