@@ -177,10 +177,55 @@ pub fn check_hostile() -> Result<(), String> {
     Ok(())
 }
 
+pub fn check_bridge() -> Result<(), String> {
+    let commingle =
+        include_str!("../../vectors/hostile/bridge.same_symbol_commingling_rejected.json");
+    let symbol = str_field(commingle, "symbol");
+    let prefix = format!("q{symbol}.");
+    if !str_field(commingle, "left_tag").starts_with(&prefix)
+        || !str_field(commingle, "right_tag").starts_with(&prefix)
+    {
+        return Err("bridge.same_symbol a tag does not carry the shared symbol".into());
+    }
+    if str_field(commingle, "left_tag") == str_field(commingle, "right_tag") {
+        return Err("bridge.same_symbol two origins share one tag".into());
+    }
+    if str_field(commingle, "left_origin") == str_field(commingle, "right_origin") {
+        return Err("bridge.same_symbol the two origins are not distinct".into());
+    }
+    if str_field(commingle, "expected") != "rejected" {
+        return Err("bridge.same_symbol commingling is not marked rejected".into());
+    }
+
+    let airlock = include_str!("../../vectors/hostile/bridge.non_airlock_artifact_unparseable.json");
+    let artifact = str_field(airlock, "artifact_kind");
+    if artifact == str_field(airlock, "airlock_form_one")
+        || artifact == str_field(airlock, "airlock_form_two")
+    {
+        return Err("bridge.airlock the hostile artifact is actually an Airlock form".into());
+    }
+    if str_field(airlock, "expected") != "unparseable" {
+        return Err("bridge.airlock the non Airlock artifact is not marked unparseable".into());
+    }
+
+    let stake = include_str!("../../vectors/hostile/bridge.bridged_asset_as_stake_rejected.json");
+    if str_field(stake, "stake_asset_origin").is_empty() {
+        return Err("bridge.stake the staked asset carries no origin tag".into());
+    }
+    if str_field(stake, "stake_asset_tag") == str_field(stake, "native_asset") {
+        return Err("bridge.stake the staked asset is the native asset, not a bridged one".into());
+    }
+    if str_field(stake, "expected") != "rejected" {
+        return Err("bridge.stake the bridged asset as stake is not marked rejected".into());
+    }
+    Ok(())
+}
+
 pub fn check_all() -> Result<(), String> {
     check_codec()?;
     check_address()?;
     check_transaction()?;
     check_idfmt()?;
-    check_hostile()
+    check_hostile()?;
+    check_bridge()
 }
