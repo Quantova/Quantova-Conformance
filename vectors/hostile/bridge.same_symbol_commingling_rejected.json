@@ -1,0 +1,13 @@
+{
+  "area": "bridge",
+  "case": "same_symbol_commingling_rejected",
+  "spec": "SPEC-gateway, the origin tag rule",
+  "description": "Treating USDT bridged from Ethereum and USDT bridged from BNB Smart Chain as one fungible asset is rejected. They are distinct assets, each with its own origin tag and reserve, and they never unify.",
+  "symbol": "USDT",
+  "left_origin": "ethereum",
+  "left_tag": "qUSDT.eth",
+  "right_origin": "bnb_smart_chain",
+  "right_tag": "qUSDT.bsc",
+  "expected": "rejected",
+  "violation": "SameSymbolCommingled"
+}

@@ -1,0 +1,11 @@
+{
+  "area": "bridge",
+  "case": "non_airlock_artifact_unparseable",
+  "spec": "SPEC-gateway, the parts and the Airlock ingress",
+  "description": "A foreign artifact entering the chain must be exactly a post quantum attestation together with a proof. Any other foreign artifact, such as a raw foreign transaction or a classical signature, has no valid form and does not parse.",
+  "artifact_kind": "foreign_classical_signature",
+  "airlock_form_one": "attestation",
+  "airlock_form_two": "stark_proof",
+  "expected": "unparseable",
+  "violation": "ForeignArtifactNotAirlock"
+}

@@ -1,0 +1,11 @@
+{
+  "area": "bridge",
+  "case": "bridged_asset_as_stake_rejected",
+  "spec": "SPEC-gateway asset controls, and SPEC-primitives origin tagged assets are not stake",
+  "description": "A bridged asset is origin tagged and second class by protocol law. Offering it as validator stake is rejected, because only native QTOV secures consensus.",
+  "stake_asset_tag": "qUSDT.eth",
+  "stake_asset_origin": "ethereum",
+  "native_asset": "QTOV",
+  "expected": "rejected",
+  "violation": "OriginTaggedNotStakeable"
+}
