@@ -1,0 +1,9 @@
+{
+  "area": "vm",
+  "case": "scratch_memory",
+  "spec": "SPEC-isa, the machine model",
+  "description": "The virtual machine scratch memory is a fixed size linear region, zeroed at entry, that must be large enough to hold a full post quantum artifact such as a hash based signature of sixteen kilobytes. Byte regions are read and written by a pointer and a length held in registers, and an access outside the region faults.",
+  "scratch_size_bytes": 65536,
+  "zeroed_at_entry": true,
+  "out_of_bounds": "fault"
+}
