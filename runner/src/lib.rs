@@ -130,3 +130,15 @@ pub fn check_transaction() -> Result<(), String> {
     let wrapper = sign(&sender_account, &body);
     same("transaction.tx_id", wrapper.id(), str_field(vector, "tx_id"))
 }
+
+pub fn check_idfmt() -> Result<(), String> {
+    let vector = include_str!("../../vectors/idfmt.families.json");
+    let input = unhex(&str_field(vector, "input"));
+    same("idfmt.q1", qtv_idfmt::render_address(&input).unwrap(), str_field(vector, "q1"))?;
+    same("idfmt.q2", qtv_idfmt::render_secret(&input).unwrap(), str_field(vector, "q2"))?;
+    same("idfmt.qtx", qtv_idfmt::render_tx(&input).unwrap(), str_field(vector, "qtx"))?;
+    same("idfmt.qbk", qtv_idfmt::render_block(&input).unwrap(), str_field(vector, "qbk"))?;
+    same("idfmt.qst", qtv_idfmt::render_state(&input).unwrap(), str_field(vector, "qst"))?;
+    same("idfmt.qcid", qtv_idfmt::render_cid(&input).unwrap(), str_field(vector, "qcid"))?;
+    same("idfmt.qpf", qtv_idfmt::render_proof(&input).unwrap(), str_field(vector, "qpf"))
+}

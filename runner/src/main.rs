@@ -1,10 +1,11 @@
-use qtv_conformance_runner::{check_address, check_codec, check_transaction};
+use qtv_conformance_runner::{check_address, check_codec, check_idfmt, check_transaction};
 
 fn main() {
-    let steps: [(&str, fn() -> Result<(), String>); 3] = [
+    let steps: [(&str, fn() -> Result<(), String>); 4] = [
         ("codec", check_codec),
         ("address", check_address),
         ("transaction", check_transaction),
+        ("idfmt", check_idfmt),
     ];
 
     let mut failed = false;

@@ -1,4 +1,4 @@
-use qtv_conformance_runner::{check_address, check_codec, check_transaction};
+use qtv_conformance_runner::{check_address, check_codec, check_idfmt, check_transaction};
 
 #[test]
 fn codec() {
@@ -13,4 +13,9 @@ fn address() {
 #[test]
 fn transaction() {
     check_transaction().unwrap();
+}
+
+#[test]
+fn idfmt() {
+    check_idfmt().unwrap();
 }
