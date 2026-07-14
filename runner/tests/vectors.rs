@@ -1,5 +1,5 @@
 use qtv_conformance_runner::{
-    check_address, check_codec, check_hostile, check_idfmt, check_transaction,
+    check_address, check_bridge, check_codec, check_hostile, check_idfmt, check_transaction,
 };
 
 #[test]
@@ -25,4 +25,9 @@ fn idfmt() {
 #[test]
 fn hostile() {
     check_hostile().unwrap();
+}
+
+#[test]
+fn bridge() {
+    check_bridge().unwrap();
 }
