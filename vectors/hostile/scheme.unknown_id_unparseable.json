@@ -1,0 +1,8 @@
+{
+  "area": "scheme",
+  "case": "unknown_id_unparseable",
+  "spec": "SPEC-accounts, the scheme identifier registry",
+  "description": "A signature envelope whose scheme identifier is not in the registry has no valid form and cannot be parsed.",
+  "scheme_id": "0x00",
+  "expected": "unparseable"
+}
