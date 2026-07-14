@@ -1,0 +1,8 @@
+{
+  "area": "idfmt",
+  "case": "hex_hash_rejected",
+  "spec": "SPEC-idfmt section 1",
+  "description": "A digest offered in the Ethereum 0x hex form carries no role prefix and no Bech32m checksum, so every identifier family refuses it.",
+  "input": "0xa7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
+  "expected": "unparseable"
+}
