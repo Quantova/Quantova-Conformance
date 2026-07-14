@@ -1,0 +1,10 @@
+{
+  "area": "fee",
+  "case": "in_band_at_several_prices",
+  "spec": "SPEC-economics, the fee model",
+  "description": "A simple transfer fee computed at several rates of the native asset in dollars always lands within the band from USD 0.0001 to USD 0.0010.",
+  "fee_usd_min": 0.0001,
+  "fee_usd_max": 0.0010,
+  "rates_native_per_dollar": [0.10, 1.00, 10.00, 100.00],
+  "expected": "every computed fee is within the band"
+}
