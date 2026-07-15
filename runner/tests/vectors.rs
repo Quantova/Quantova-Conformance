@@ -1,5 +1,6 @@
 use qtv_conformance_runner::{
-    check_address, check_bridge, check_codec, check_hostile, check_idfmt, check_transaction,
+    check_address, check_bridge, check_codec, check_hostile, check_idfmt, check_scheme_hash,
+    check_transaction,
 };
 
 #[test]
@@ -15,6 +16,11 @@ fn address() {
 #[test]
 fn transaction() {
     check_transaction().unwrap();
+}
+
+#[test]
+fn scheme_hash() {
+    check_scheme_hash().unwrap();
 }
 
 #[test]

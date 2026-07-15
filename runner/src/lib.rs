@@ -1,6 +1,6 @@
 //! Reproduces the frozen conformance vectors with the reference crates and
 
-use qtv_account::{derive, Tier};
+use qtv_account::{derive, derive_with_scheme, Tier};
 use qtv_codec::{from_bytes, to_bytes};
 use qtv_crypto::sha3;
 use qtv_tx::{sign, Body, Call};
@@ -132,6 +132,70 @@ pub fn check_transaction() -> Result<(), String> {
     same("transaction.tx_id", wrapper.id(), str_field(vector, "tx_id"))
 }
 
+pub fn check_scheme_hash() -> Result<(), String> {
+    let vector = include_str!("../../vectors/scheme.hash_account_and_transfer.json");
+    let seed = seed32(&str_field(vector, "master_seed"));
+    let scheme = num_field(vector, "scheme") as u8;
+    let sender_index = num_field(vector, "sender_index") as u64;
+    let target_index = num_field(vector, "target_index") as u64;
+    let sender_account = derive_with_scheme(&seed, scheme, sender_index);
+    let target = derive_with_scheme(&seed, scheme, target_index).address_at(Tier::Canonical);
+    let sender = sender_account.address_at(Tier::Canonical);
+
+    same(
+        "scheme_hash.scheme",
+        sender_account.scheme() as u128,
+        num_field(vector, "scheme"),
+    )?;
+    same(
+        "scheme_hash.canonical",
+        sender_account.address_at(Tier::Canonical),
+        str_field(vector, "canonical"),
+    )?;
+    same(
+        "scheme_hash.compact",
+        sender_account.address_at(Tier::Compact),
+        str_field(vector, "compact"),
+    )?;
+    same(
+        "scheme_hash.sender",
+        sender.clone(),
+        str_field(vector, "sender"),
+    )?;
+    same(
+        "scheme_hash.target",
+        target.clone(),
+        str_field(vector, "target"),
+    )?;
+
+    let args = unhex(&str_field(vector, "args"));
+    let call = Call::new(target, args);
+    let body = Body::new(
+        sender,
+        num_field(vector, "nonce") as u64,
+        num_field(vector, "gas_limit") as u64,
+        num_field(vector, "fee"),
+        call,
+    );
+    same(
+        "scheme_hash.body_bytes",
+        hex(&to_bytes(&body)),
+        str_field(vector, "body_bytes"),
+    )?;
+
+    let wrapper = sign(&sender_account, &body);
+    same(
+        "scheme_hash.signed_scheme",
+        wrapper.scheme() as u128,
+        num_field(vector, "scheme"),
+    )?;
+    same(
+        "scheme_hash.tx_id",
+        wrapper.id(),
+        str_field(vector, "tx_id"),
+    )
+}
+
 pub fn check_idfmt() -> Result<(), String> {
     let vector = include_str!("../../vectors/idfmt.families.json");
     let input = unhex(&str_field(vector, "input"));
@@ -225,6 +289,7 @@ pub fn check_all() -> Result<(), String> {
     check_codec()?;
     check_address()?;
     check_transaction()?;
+    check_scheme_hash()?;
     check_idfmt()?;
     check_hostile()?;
     check_bridge()
