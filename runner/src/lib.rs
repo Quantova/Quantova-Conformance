@@ -221,12 +221,12 @@ pub fn check_hostile() -> Result<(), String> {
         return Err("hostile.floor payload rendered below the floor".into());
     }
 
-    let keccak = include_str!("../../vectors/hostile/crypto.keccak_not_sha3.json");
+    let vector = include_str!("../../vectors/hostile/crypto.classical_not_sha3.json");
     let recomputed = hex(&sha3::sha3_256(b""));
-    same("hostile.sha3_empty", recomputed.clone(), str_field(keccak, "sha3_256_empty"))?;
-    let classical = str_field(keccak, "keccak256_empty");
+    same("hostile.sha3_empty", recomputed.clone(), str_field(vector, "sha3_256_empty"))?;
+    let classical = str_field(vector, "classical256_empty");
     if recomputed == classical {
-        return Err("hostile.keccak the stack digest equals the classical digest".into());
+        return Err("hostile.vector the stack digest equals the classical digest".into());
     }
     Ok(())
 }
