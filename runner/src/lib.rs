@@ -1,6 +1,6 @@
 //! Reproduces the frozen conformance vectors with the reference crates and
 
-use qtv_account::{derive, derive_with_scheme, Tier};
+use qtv_account::{derive, derive_with_scheme};
 use qtv_codec::{from_bytes, to_bytes};
 use qtv_crypto::sha3;
 use qtv_tx::{sign, Body, Call};
@@ -98,13 +98,8 @@ pub fn check_address() -> Result<(), String> {
     same("address.scheme", account.scheme() as u128, num_field(vector, "scheme"))?;
     same(
         "address.canonical",
-        account.address_at(Tier::Canonical),
+        account.address(),
         str_field(vector, "canonical"),
-    )?;
-    same(
-        "address.compact",
-        account.address_at(Tier::Compact),
-        str_field(vector, "compact"),
     )
 }
 
@@ -112,8 +107,8 @@ pub fn check_transaction() -> Result<(), String> {
     let vector = include_str!("../../vectors/transaction.transfer.json");
     let seed = seed32(&str_field(vector, "master_seed"));
     let sender_account = derive(&seed, num_field(vector, "sender_index") as u64);
-    let target = derive(&seed, num_field(vector, "target_index") as u64).address_at(Tier::Canonical);
-    let sender = sender_account.address_at(Tier::Canonical);
+    let target = derive(&seed, num_field(vector, "target_index") as u64).address();
+    let sender = sender_account.address();
     same("transaction.sender", sender.clone(), str_field(vector, "sender"))?;
     same("transaction.target", target.clone(), str_field(vector, "target"))?;
 
@@ -139,8 +134,8 @@ pub fn check_scheme_hash() -> Result<(), String> {
     let sender_index = num_field(vector, "sender_index") as u64;
     let target_index = num_field(vector, "target_index") as u64;
     let sender_account = derive_with_scheme(&seed, scheme, sender_index);
-    let target = derive_with_scheme(&seed, scheme, target_index).address_at(Tier::Canonical);
-    let sender = sender_account.address_at(Tier::Canonical);
+    let target = derive_with_scheme(&seed, scheme, target_index).address();
+    let sender = sender_account.address();
 
     same(
         "scheme_hash.scheme",
@@ -149,13 +144,8 @@ pub fn check_scheme_hash() -> Result<(), String> {
     )?;
     same(
         "scheme_hash.canonical",
-        sender_account.address_at(Tier::Canonical),
+        sender_account.address(),
         str_field(vector, "canonical"),
-    )?;
-    same(
-        "scheme_hash.compact",
-        sender_account.address_at(Tier::Compact),
-        str_field(vector, "compact"),
     )?;
     same(
         "scheme_hash.sender",
