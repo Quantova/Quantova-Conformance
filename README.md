@@ -25,10 +25,10 @@ cargo test -p qtv-conformance-runner
 These fix the wire format the whole stack must agree on.
 
 - Codec. The canonical encoding of `u32`, `u64`, `u128`, byte strings, and `Option`, checked both ways, encode to the frozen bytes and decode back to the value.
-- Address derivation. A master seed and an account index derive the q1 address and its scheme, byte for byte.
+- Address derivation. A master seed and an account index derive the Q1 address and its scheme, byte for byte.
 - Transaction. A transfer body encodes to the frozen bytes and signs to the frozen transaction identifier.
 - Scheme hash. The same account and transfer under an explicit signature scheme, so the scheme is pinned into the address and the signed wrapper.
-- Identifier families. One input renders the whole Quantova identifier set, q1 for addresses, and the q2, qtx, qbk, qst, qcid, and qpf families, each to its frozen string.
+- Identifier families. One input renders the whole Quantova identifier set, Q1 for addresses, and the Q2, qtx, qbk, qst, qcid, and qpf families, each to its frozen string.
 
 ## The hostile vectors
 
