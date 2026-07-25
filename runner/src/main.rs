@@ -1,3 +1,6 @@
+// Copyright 2026 Quantova Inc
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use qtv_conformance_runner::{
     check_address, check_codec, check_hostile, check_idfmt, check_transaction,
 };

@@ -1,3 +1,6 @@
+// Copyright 2026 Quantova Inc
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 //! A narrow reader for the frozen vector files. Each key is unique inside a
 
 fn value_start(text: &str, key: &str) -> usize {

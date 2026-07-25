@@ -1,3 +1,6 @@
+// Copyright 2026 Quantova Inc
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 //! Reproduces the frozen conformance vectors with the reference crates and
 
 use qtv_account::{derive, derive_with_scheme};
