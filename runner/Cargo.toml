@@ -9,8 +9,8 @@ license = "Apache-2.0 OR MIT"
 publish = false
 
 [dependencies]
-qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f913427aab80fe0071b96fc35c474d03aa8361f5" }
-qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f913427aab80fe0071b96fc35c474d03aa8361f5" }
-qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f913427aab80fe0071b96fc35c474d03aa8361f5" }
-qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f913427aab80fe0071b96fc35c474d03aa8361f5" }
-qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "21e28f1ffd1ca46a7144136c483618b18cd29bae" }
+qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "a59506f0374080e0f900e411dd3c832482ac857c" }
+qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "a59506f0374080e0f900e411dd3c832482ac857c" }
+qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "a59506f0374080e0f900e411dd3c832482ac857c" }
+qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "a59506f0374080e0f900e411dd3c832482ac857c" }
+qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "7ac1ed92287e8edf2a96f6cff7f9f19281744a9d" }
