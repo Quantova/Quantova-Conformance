@@ -31,7 +31,9 @@ fn same<T: PartialEq + std::fmt::Debug>(label: &str, got: T, want: T) -> Result<
     if got == want {
         Ok(())
     } else {
-        Err(format!("{label} recomputed {got:?} but the vector holds {want:?}"))
+        Err(format!(
+            "{label} recomputed {got:?} but the vector holds {want:?}"
+        ))
     }
 }
 
@@ -80,12 +82,20 @@ pub fn check_codec() -> Result<(), String> {
             "option_some_u32" => {
                 let value: Option<u32> = Some(num_field(vector, "input") as u32);
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<Option<u32>>(&unhex(&want)).unwrap(), value)?;
+                same(
+                    &label,
+                    from_bytes::<Option<u32>>(&unhex(&want)).unwrap(),
+                    value,
+                )?;
             }
             "option_none_u32" => {
                 let value: Option<u32> = None;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<Option<u32>>(&unhex(&want)).unwrap(), value)?;
+                same(
+                    &label,
+                    from_bytes::<Option<u32>>(&unhex(&want)).unwrap(),
+                    value,
+                )?;
             }
             other => return Err(format!("{label} names an unknown kind {other}")),
         }
@@ -98,7 +108,11 @@ pub fn check_address() -> Result<(), String> {
     let seed = seed32(&str_field(vector, "master_seed"));
     let index = num_field(vector, "index") as u64;
     let account = derive(&seed, index);
-    same("address.scheme", account.scheme() as u128, num_field(vector, "scheme"))?;
+    same(
+        "address.scheme",
+        account.scheme() as u128,
+        num_field(vector, "scheme"),
+    )?;
     same(
         "address.canonical",
         account.address(),
@@ -112,8 +126,16 @@ pub fn check_transaction() -> Result<(), String> {
     let sender_account = derive(&seed, num_field(vector, "sender_index") as u64);
     let target = derive(&seed, num_field(vector, "target_index") as u64).address();
     let sender = sender_account.address();
-    same("transaction.sender", sender.clone(), str_field(vector, "sender"))?;
-    same("transaction.target", target.clone(), str_field(vector, "target"))?;
+    same(
+        "transaction.sender",
+        sender.clone(),
+        str_field(vector, "sender"),
+    )?;
+    same(
+        "transaction.target",
+        target.clone(),
+        str_field(vector, "target"),
+    )?;
 
     let args = unhex(&str_field(vector, "args"));
     let call = Call::new(target, args);
@@ -124,10 +146,18 @@ pub fn check_transaction() -> Result<(), String> {
         num_field(vector, "fee"),
         call,
     );
-    same("transaction.body_bytes", hex(&to_bytes(&body)), str_field(vector, "body_bytes"))?;
+    same(
+        "transaction.body_bytes",
+        hex(&to_bytes(&body)),
+        str_field(vector, "body_bytes"),
+    )?;
 
     let wrapper = sign(&sender_account, &body);
-    same("transaction.tx_id", wrapper.id(), str_field(vector, "tx_id"))
+    same(
+        "transaction.tx_id",
+        wrapper.id(),
+        str_field(vector, "tx_id"),
+    )
 }
 
 pub fn check_scheme_hash() -> Result<(), String> {
@@ -192,13 +222,41 @@ pub fn check_scheme_hash() -> Result<(), String> {
 pub fn check_idfmt() -> Result<(), String> {
     let vector = include_str!("../../vectors/idfmt.families.json");
     let input = unhex(&str_field(vector, "input"));
-    same("idfmt.q1", qtv_idfmt::render_address(&input).unwrap(), str_field(vector, "q1"))?;
-    same("idfmt.q2", qtv_idfmt::render_secret(&input).unwrap(), str_field(vector, "q2"))?;
-    same("idfmt.qtx", qtv_idfmt::render_tx(&input).unwrap(), str_field(vector, "qtx"))?;
-    same("idfmt.qbk", qtv_idfmt::render_block(&input).unwrap(), str_field(vector, "qbk"))?;
-    same("idfmt.qst", qtv_idfmt::render_state(&input).unwrap(), str_field(vector, "qst"))?;
-    same("idfmt.qcid", qtv_idfmt::render_cid(&input).unwrap(), str_field(vector, "qcid"))?;
-    same("idfmt.qpf", qtv_idfmt::render_proof(&input).unwrap(), str_field(vector, "qpf"))
+    same(
+        "idfmt.q1",
+        qtv_idfmt::render_address(&input).unwrap(),
+        str_field(vector, "q1"),
+    )?;
+    same(
+        "idfmt.q2",
+        qtv_idfmt::render_secret(&input).unwrap(),
+        str_field(vector, "q2"),
+    )?;
+    same(
+        "idfmt.qtx",
+        qtv_idfmt::render_tx(&input).unwrap(),
+        str_field(vector, "qtx"),
+    )?;
+    same(
+        "idfmt.qbk",
+        qtv_idfmt::render_block(&input).unwrap(),
+        str_field(vector, "qbk"),
+    )?;
+    same(
+        "idfmt.qst",
+        qtv_idfmt::render_state(&input).unwrap(),
+        str_field(vector, "qst"),
+    )?;
+    same(
+        "idfmt.qcid",
+        qtv_idfmt::render_cid(&input).unwrap(),
+        str_field(vector, "qcid"),
+    )?;
+    same(
+        "idfmt.qpf",
+        qtv_idfmt::render_proof(&input).unwrap(),
+        str_field(vector, "qpf"),
+    )
 }
 
 pub fn check_hostile() -> Result<(), String> {
@@ -226,7 +284,11 @@ pub fn check_hostile() -> Result<(), String> {
 
     let vector = include_str!("../../vectors/hostile/crypto.classical_not_sha3.json");
     let recomputed = hex(&sha3::sha3_256(b""));
-    same("hostile.sha3_empty", recomputed.clone(), str_field(vector, "sha3_256_empty"))?;
+    same(
+        "hostile.sha3_empty",
+        recomputed.clone(),
+        str_field(vector, "sha3_256_empty"),
+    )?;
     let classical = str_field(vector, "classical256_empty");
     if recomputed == classical {
         return Err("hostile.vector the stack digest equals the classical digest".into());
@@ -254,7 +316,8 @@ pub fn check_bridge() -> Result<(), String> {
         return Err("bridge.same_symbol commingling is not marked rejected".into());
     }
 
-    let airlock = include_str!("../../vectors/hostile/bridge.non_airlock_artifact_unparseable.json");
+    let airlock =
+        include_str!("../../vectors/hostile/bridge.non_airlock_artifact_unparseable.json");
     let artifact = str_field(airlock, "artifact_kind");
     if artifact == str_field(airlock, "airlock_form_one")
         || artifact == str_field(airlock, "airlock_form_two")
