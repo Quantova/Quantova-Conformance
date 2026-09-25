@@ -13,7 +13,7 @@ qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "687
 qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "6871d96e5273c9b849e3bda376c7dcdf4b409c61" }
 qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "6871d96e5273c9b849e3bda376c7dcdf4b409c61" }
 qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "6871d96e5273c9b849e3bda376c7dcdf4b409c61" }
-qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "292594d18080179e304576164f44703d410d919f" }
+qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "e6652598dc3847189609a282128921824d55c10b" }
 
 [profile.dev.package.qtv-crypto]
 opt-level = 3
