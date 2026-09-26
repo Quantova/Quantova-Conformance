@@ -32,7 +32,7 @@ These fix the wire format the whole stack must agree on.
 
 ## The hostile vectors
 
-These prove refusal, which is the harder half of the property. The runner enforces the identifier, address, cryptographic, and bridge refusals against the reference.
+These prove refusal, which is the harder half of the property. The runner enforces the identifier, address, and cryptographic refusals against the reference. The bridge vectors are checked here for their own shape only, and the refusals they describe are enforced by the bridge parsers in Q-Oracle.
 
 - A hex hash, the shape of an Ethereum identifier, parses in none of the identifier families.
 - A payload below the key floor renders in no address or secret family, so an under length key cannot masquerade as one.
