@@ -75,7 +75,7 @@ const UNCHECKED_HERE: &[(&str, &str)] = &[
         "mirrored from QONCORD and enforced by the constitutional gate there",
     ),
     (
-        "hostile/governance.justice_touches_stake.json",
+        "hostile/governance.recovery_from_unfrozen_stake.json",
         "mirrored from QONCORD and enforced by the constitutional gate there",
     ),
 ];
