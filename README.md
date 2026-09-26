@@ -6,11 +6,11 @@ Quantova is a sovereign post quantum Layer 1 that shares no wire and no encoding
 
 ## What it does
 
-The runner reproduces every frozen vector with the reference crates and confirms two things. A positive vector must recompute bit for bit, and a hostile vector must be refused. The reference crates are pinned by git tag, so a vector is measured against a known build and not a moving target.
+The runner reproduces every frozen vector with the reference crates and confirms two things. A positive vector must recompute bit for bit, and a hostile vector must be refused. The reference crates are pinned to exact git commits in `runner/Cargo.toml`, so a vector is measured against a known build and not a moving target.
 
 ```
-qtv-idfmt, qtv-account, qtv-codec, qtv-tx   from Quantova-Chain at tag v0.2.0
-qtv-crypto                                   from Q-Crypto at tag v0.1.0
+qtv-idfmt, qtv-account, qtv-codec, qtv-tx   from Quantova-Chain
+qtv-crypto                                   from Q-Crypto
 ```
 
 Run it as a binary that prints one line per area, or as the test suite.
