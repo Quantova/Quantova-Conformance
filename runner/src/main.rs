@@ -6,8 +6,10 @@ use qtv_conformance_runner::{
     check_transaction,
 };
 
+type Step = (&'static str, fn() -> Result<(), String>);
+
 fn main() {
-    let steps: [(&str, fn() -> Result<(), String>); 7] = [
+    let steps: [Step; 7] = [
         ("codec", check_codec),
         ("address", check_address),
         ("transaction", check_transaction),

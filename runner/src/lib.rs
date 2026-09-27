@@ -21,7 +21,7 @@ fn hex(bytes: &[u8]) -> String {
 }
 
 fn unhex(text: &str) -> Vec<u8> {
-    assert!(text.len() % 2 == 0, "hex length is even");
+    assert!(text.len().is_multiple_of(2), "hex length is even");
     (0..text.len() / 2)
         .map(|i| u8::from_str_radix(&text[2 * i..2 * i + 2], 16).expect("hex digit"))
         .collect()
