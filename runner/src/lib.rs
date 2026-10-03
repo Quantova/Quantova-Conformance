@@ -166,8 +166,11 @@ pub fn check_scheme_hash() -> Result<(), String> {
     let scheme = num_field(vector, "scheme") as u8;
     let sender_index = num_field(vector, "sender_index") as u64;
     let target_index = num_field(vector, "target_index") as u64;
-    let sender_account = derive_with_scheme(&seed, scheme, sender_index);
-    let target = derive_with_scheme(&seed, scheme, target_index).address();
+    let sender_account = derive_with_scheme(&seed, scheme, sender_index)
+        .expect("the conformance scheme derives a spendable account");
+    let target = derive_with_scheme(&seed, scheme, target_index)
+        .expect("the conformance scheme derives a spendable account")
+        .address();
     let sender = sender_account.address();
 
     same(
