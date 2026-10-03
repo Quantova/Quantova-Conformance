@@ -138,14 +138,17 @@ pub fn check_transaction() -> Result<(), String> {
     )?;
 
     let args = unhex(&str_field(vector, "args"));
-    let call = Call::new(target, args);
-    let body = Body::new(
+    let call = Call::new(target, args.clone());
+    let mut body = Body::new(
         sender,
         num_field(vector, "nonce") as u64,
-        num_field(vector, "gas_limit") as u64,
+        num_field(vector, "meter_limit") as u64,
         num_field(vector, "fee"),
         call,
     );
+    if !args.is_empty() {
+        body = body.calling();
+    }
     same(
         "transaction.body_bytes",
         hex(&to_bytes(&body)),
