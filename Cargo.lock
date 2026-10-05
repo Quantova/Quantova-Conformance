@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "qtv-account"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=833c39ab599cc58fde65bc47f283ad93272f6196#833c39ab599cc58fde65bc47f283ad93272f6196"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=3ed57775e1171f870e0236d8d605e07b6dc03761#3ed57775e1171f870e0236d8d605e07b6dc03761"
 dependencies = [
  "qtv-crypto",
  "qtv-idfmt",
@@ -15,7 +15,7 @@ dependencies = [
 [[package]]
 name = "qtv-codec"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=833c39ab599cc58fde65bc47f283ad93272f6196#833c39ab599cc58fde65bc47f283ad93272f6196"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=3ed57775e1171f870e0236d8d605e07b6dc03761#3ed57775e1171f870e0236d8d605e07b6dc03761"
 
 [[package]]
 name = "qtv-conformance-runner"
@@ -36,12 +36,12 @@ source = "git+https://github.com/Quantova/Q-Crypto.git?rev=12fefda211c5b7f8a8e9e
 [[package]]
 name = "qtv-idfmt"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=833c39ab599cc58fde65bc47f283ad93272f6196#833c39ab599cc58fde65bc47f283ad93272f6196"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=3ed57775e1171f870e0236d8d605e07b6dc03761#3ed57775e1171f870e0236d8d605e07b6dc03761"
 
 [[package]]
 name = "qtv-tx"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=833c39ab599cc58fde65bc47f283ad93272f6196#833c39ab599cc58fde65bc47f283ad93272f6196"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=3ed57775e1171f870e0236d8d605e07b6dc03761#3ed57775e1171f870e0236d8d605e07b6dc03761"
 dependencies = [
  "qtv-account",
  "qtv-codec",
@@ -53,4 +53,4 @@ dependencies = [
 [[package]]
 name = "qtv-wipe"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=833c39ab599cc58fde65bc47f283ad93272f6196#833c39ab599cc58fde65bc47f283ad93272f6196"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=3ed57775e1171f870e0236d8d605e07b6dc03761#3ed57775e1171f870e0236d8d605e07b6dc03761"
