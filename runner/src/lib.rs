@@ -6,7 +6,7 @@
 use qtv_account::{derive, derive_with_scheme};
 use qtv_codec::{from_bytes, to_bytes};
 use qtv_crypto::sha3;
-use qtv_tx::{sign, Body, Call};
+use qtv_tx::{try_sign, Body, Call};
 
 pub mod json;
 
@@ -139,12 +139,14 @@ pub fn check_transaction() -> Result<(), String> {
 
     let args = unhex(&str_field(vector, "args"));
     let call = Call::new(target, args.clone());
-    let mut body = Body::new(
+    let mut body = Body::with_context(
         sender,
         num_field(vector, "nonce") as u64,
         num_field(vector, "meter_limit") as u64,
         num_field(vector, "fee"),
         call,
+        0,
+        qtv_tx::LOCAL_CHAIN_ID,
     );
     if !args.is_empty() {
         body = body.calling();
@@ -155,7 +157,8 @@ pub fn check_transaction() -> Result<(), String> {
         str_field(vector, "body_bytes"),
     )?;
 
-    let wrapper = sign(&sender_account, &body);
+    let wrapper = try_sign(&sender_account, &body)
+        .ok_or_else(|| "the vector addresses do not parse".to_string())?;
     same(
         "transaction.tx_id",
         wrapper.id(),
@@ -199,12 +202,14 @@ pub fn check_scheme_hash() -> Result<(), String> {
 
     let args = unhex(&str_field(vector, "args"));
     let call = Call::new(target, args);
-    let body = Body::new(
+    let body = Body::with_context(
         sender,
         num_field(vector, "nonce") as u64,
         num_field(vector, "gas_limit") as u64,
         num_field(vector, "fee"),
         call,
+        0,
+        qtv_tx::LOCAL_CHAIN_ID,
     );
     same(
         "scheme_hash.body_bytes",
@@ -212,7 +217,8 @@ pub fn check_scheme_hash() -> Result<(), String> {
         str_field(vector, "body_bytes"),
     )?;
 
-    let wrapper = sign(&sender_account, &body);
+    let wrapper = try_sign(&sender_account, &body)
+        .ok_or_else(|| "the vector addresses do not parse".to_string())?;
     same(
         "scheme_hash.signed_scheme",
         wrapper.scheme() as u128,
