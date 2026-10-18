@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "qtv-account"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=b2491a594a9cfe075d71a0ad85b996099eb5d7cc#b2491a594a9cfe075d71a0ad85b996099eb5d7cc"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd#fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd"
 dependencies = [
  "qtv-crypto",
  "qtv-idfmt",
@@ -15,7 +15,7 @@ dependencies = [
 [[package]]
 name = "qtv-codec"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=b2491a594a9cfe075d71a0ad85b996099eb5d7cc#b2491a594a9cfe075d71a0ad85b996099eb5d7cc"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd#fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd"
 
 [[package]]
 name = "qtv-conformance-runner"
@@ -31,17 +31,17 @@ dependencies = [
 [[package]]
 name = "qtv-crypto"
 version = "0.3.0"
-source = "git+https://github.com/Quantova/Q-Crypto.git?rev=e47d6cd94e71c13b22e2990f8c2b0a2e3a2204d0#e47d6cd94e71c13b22e2990f8c2b0a2e3a2204d0"
+source = "git+https://github.com/Quantova/Q-Crypto.git?rev=46f70778a505a495adb3a1805620802b380ce465#46f70778a505a495adb3a1805620802b380ce465"
 
 [[package]]
 name = "qtv-idfmt"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=b2491a594a9cfe075d71a0ad85b996099eb5d7cc#b2491a594a9cfe075d71a0ad85b996099eb5d7cc"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd#fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd"
 
 [[package]]
 name = "qtv-tx"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=b2491a594a9cfe075d71a0ad85b996099eb5d7cc#b2491a594a9cfe075d71a0ad85b996099eb5d7cc"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd#fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd"
 dependencies = [
  "qtv-account",
  "qtv-codec",
@@ -53,4 +53,4 @@ dependencies = [
 [[package]]
 name = "qtv-wipe"
 version = "0.1.0"
-source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=b2491a594a9cfe075d71a0ad85b996099eb5d7cc#b2491a594a9cfe075d71a0ad85b996099eb5d7cc"
+source = "git+https://github.com/Quantova/Quantova-Chain.git?rev=fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd#fca2d70dcd5c20a44bd1261dfb02faacba3bfcdd"
