@@ -2,21 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use qtv_conformance_runner::{
-    check_address, check_bridge, check_codec, check_hostile, check_idfmt, check_scheme_hash,
-    check_transaction,
+    check_address, check_codec, check_hostile, check_idfmt, check_scheme_hash, check_transaction,
 };
 
 type Step = (&'static str, fn() -> Result<(), String>);
 
 fn main() {
-    let steps: [Step; 7] = [
+    let steps: [Step; 6] = [
         ("codec", check_codec),
         ("address", check_address),
         ("transaction", check_transaction),
         ("scheme_hash", check_scheme_hash),
         ("idfmt", check_idfmt),
         ("hostile", check_hostile),
-        ("bridge", check_bridge),
     ];
 
     let mut failed = false;

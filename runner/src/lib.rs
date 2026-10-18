@@ -1,8 +1,6 @@
 // Copyright 2026 Quantova Inc
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-//! Reproduces the frozen conformance vectors with the reference crates and
-
 use qtv_account::{derive, derive_with_scheme};
 use qtv_codec::{from_bytes, to_bytes};
 use qtv_crypto::sha3;
@@ -10,7 +8,7 @@ use qtv_tx::{try_sign, Body, Call};
 
 pub mod json;
 
-use json::{num_field, str_field};
+use json::Json;
 
 fn hex(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len() * 2);
@@ -20,10 +18,15 @@ fn hex(bytes: &[u8]) -> String {
     out
 }
 
-fn unhex(text: &str) -> Vec<u8> {
-    assert!(text.len().is_multiple_of(2), "hex length is even");
+fn unhex(text: &str) -> Result<Vec<u8>, String> {
+    if !text.len().is_multiple_of(2) {
+        return Err("a hex field has an odd length".to_string());
+    }
     (0..text.len() / 2)
-        .map(|i| u8::from_str_radix(&text[2 * i..2 * i + 2], 16).expect("hex digit"))
+        .map(|i| {
+            u8::from_str_radix(&text[2 * i..2 * i + 2], 16)
+                .map_err(|_| "a hex field holds a non hex digit".to_string())
+        })
         .collect()
 }
 
@@ -37,11 +40,18 @@ fn same<T: PartialEq + std::fmt::Debug>(label: &str, got: T, want: T) -> Result<
     }
 }
 
-fn seed32(text: &str) -> [u8; 32] {
-    let raw = unhex(text);
-    let mut seed = [0u8; 32];
-    seed.copy_from_slice(&raw);
-    seed
+fn seed32(text: &str) -> Result<[u8; 32], String> {
+    unhex(text)?
+        .try_into()
+        .map_err(|_| "a master seed is not 32 bytes".to_string())
+}
+
+fn load(text: &str) -> Result<Json, String> {
+    json::parse(text)
+}
+
+fn decoded<T: qtv_codec::Decode>(label: &str, bytes: &[u8]) -> Result<T, String> {
+    from_bytes::<T>(bytes).map_err(|_| format!("{label} bytes do not decode"))
 }
 
 const CODEC: [&str; 6] = [
@@ -54,159 +64,197 @@ const CODEC: [&str; 6] = [
 ];
 
 pub fn check_codec() -> Result<(), String> {
-    for vector in CODEC {
-        let kind = str_field(vector, "kind");
-        let want = str_field(vector, "bytes");
-        let label = format!("codec.{}", str_field(vector, "case"));
+    for text in CODEC {
+        let vector = load(text)?;
+        let kind = vector.str_of("kind")?;
+        let want = vector.str_of("bytes")?;
+        let wire = unhex(&want)?;
+        let label = format!("codec.{}", vector.str_of("case")?);
         match kind.as_str() {
             "u32" => {
-                let value = num_field(vector, "input") as u32;
+                let value = vector.u32_of("input")?;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<u32>(&unhex(&want)).unwrap(), value)?;
+                same(&label, decoded::<u32>(&label, &wire)?, value)?;
             }
             "u64" => {
-                let value = num_field(vector, "input") as u64;
+                let value = vector.u64_of("input")?;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<u64>(&unhex(&want)).unwrap(), value)?;
+                same(&label, decoded::<u64>(&label, &wire)?, value)?;
             }
             "u128" => {
-                let value = num_field(vector, "input");
+                let value = vector.num_of("input")?;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<u128>(&unhex(&want)).unwrap(), value)?;
+                same(&label, decoded::<u128>(&label, &wire)?, value)?;
             }
             "bytes" => {
-                let value = unhex(&str_field(vector, "input"));
+                let value = unhex(&vector.str_of("input")?)?;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(&label, from_bytes::<Vec<u8>>(&unhex(&want)).unwrap(), value)?;
+                same(&label, decoded::<Vec<u8>>(&label, &wire)?, value)?;
             }
             "option_some_u32" => {
-                let value: Option<u32> = Some(num_field(vector, "input") as u32);
+                let value: Option<u32> = Some(vector.u32_of("input")?);
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(
-                    &label,
-                    from_bytes::<Option<u32>>(&unhex(&want)).unwrap(),
-                    value,
-                )?;
+                same(&label, decoded::<Option<u32>>(&label, &wire)?, value)?;
             }
             "option_none_u32" => {
                 let value: Option<u32> = None;
                 same(&label, hex(&to_bytes(&value)), want.clone())?;
-                same(
-                    &label,
-                    from_bytes::<Option<u32>>(&unhex(&want)).unwrap(),
-                    value,
-                )?;
+                same(&label, decoded::<Option<u32>>(&label, &wire)?, value)?;
             }
             other => return Err(format!("{label} names an unknown kind {other}")),
+        }
+        let mut longer = wire.clone();
+        longer.push(0);
+        let refused = match kind.as_str() {
+            "u32" => from_bytes::<u32>(&longer).is_err(),
+            "u64" => from_bytes::<u64>(&longer).is_err(),
+            "u128" => from_bytes::<u128>(&longer).is_err(),
+            "bytes" => from_bytes::<Vec<u8>>(&longer).is_err(),
+            _ => from_bytes::<Option<u32>>(&longer).is_err(),
+        };
+        if !refused {
+            return Err(format!("{label} accepts a trailing byte after the value"));
         }
     }
     Ok(())
 }
 
 pub fn check_address() -> Result<(), String> {
-    let vector = include_str!("../../vectors/address.derivation.json");
-    let seed = seed32(&str_field(vector, "master_seed"));
-    let index = num_field(vector, "index") as u64;
-    let account = derive(&seed, index);
+    let vector = load(include_str!("../../vectors/address.derivation.json"))?;
+    let seed = seed32(&vector.str_of("master_seed")?)?;
+    let account = derive(&seed, vector.u64_of("index")?);
     same(
         "address.scheme",
-        account.scheme() as u128,
-        num_field(vector, "scheme"),
+        u128::from(account.scheme()),
+        vector.num_of("scheme")?,
     )?;
     same(
         "address.canonical",
         account.address(),
-        str_field(vector, "canonical"),
+        vector.str_of("canonical")?,
     )
 }
 
 pub fn check_transaction() -> Result<(), String> {
-    let vector = include_str!("../../vectors/transaction.transfer.json");
-    let seed = seed32(&str_field(vector, "master_seed"));
-    let sender_account = derive(&seed, num_field(vector, "sender_index") as u64);
-    let target = derive(&seed, num_field(vector, "target_index") as u64).address();
+    let vector = load(include_str!("../../vectors/transaction.transfer.json"))?;
+    let seed = seed32(&vector.str_of("master_seed")?)?;
+    let sender_account = derive(&seed, vector.u64_of("sender_index")?);
+    let target = derive(&seed, vector.u64_of("target_index")?).address();
     let sender = sender_account.address();
     same(
         "transaction.sender",
         sender.clone(),
-        str_field(vector, "sender"),
+        vector.str_of("sender")?,
     )?;
     same(
         "transaction.target",
         target.clone(),
-        str_field(vector, "target"),
+        vector.str_of("target")?,
     )?;
 
-    let args = unhex(&str_field(vector, "args"));
-    let call = Call::new(target, args.clone());
-    let mut body = Body::with_context(
+    let args = unhex(&vector.str_of("args")?)?;
+    let call = Call::new(target, args);
+    let body = Body::with_context(
         sender,
-        num_field(vector, "nonce") as u64,
-        num_field(vector, "meter_limit") as u64,
-        num_field(vector, "fee"),
+        vector.u64_of("nonce")?,
+        vector.u64_of("meter_limit")?,
+        vector.num_of("fee")?,
         call,
         0,
         qtv_tx::LOCAL_CHAIN_ID,
     );
-    if !args.is_empty() {
-        body = body.calling();
-    }
+    let body = match vector.str_of("kind")?.as_str() {
+        "call" => body.calling(),
+        "transfer" => body,
+        other => return Err(format!("transaction names an unknown kind {other}")),
+    };
     same(
         "transaction.body_bytes",
         hex(&to_bytes(&body)),
-        str_field(vector, "body_bytes"),
+        vector.str_of("body_bytes")?,
     )?;
 
     let wrapper = try_sign(&sender_account, &body)
         .ok_or_else(|| "the vector addresses do not parse".to_string())?;
+    same("transaction.tx_id", wrapper.id(), vector.str_of("tx_id")?)?;
+
+    let bounded = vector.get("bounded")?;
+    let deadline = body.clone().valid_until(bounded.u64_of("valid_until")?);
+    let signed = try_sign(&sender_account, &deadline)
+        .ok_or_else(|| "the bounded vector addresses do not parse".to_string())?;
     same(
-        "transaction.tx_id",
-        wrapper.id(),
-        str_field(vector, "tx_id"),
-    )
+        "transaction.bounded.tx_hex",
+        hex(&to_bytes(&signed)),
+        bounded.str_of("tx_hex")?,
+    )?;
+    same(
+        "transaction.bounded.tx_id",
+        signed.id(),
+        bounded.str_of("tx_id")?,
+    )?;
+    if signed.id() == wrapper.id() {
+        return Err("transaction.bounded the deadline does not change the signed bytes".into());
+    }
+    let other_chain = Body::with_context(
+        body.sender().to_string(),
+        body.nonce(),
+        body.meter_limit(),
+        body.fee(),
+        body.call().clone(),
+        0,
+        qtv_tx::LOCAL_CHAIN_ID ^ 1,
+    );
+    let other_chain = match vector.str_of("kind")?.as_str() {
+        "call" => other_chain.calling(),
+        _ => other_chain,
+    };
+    if hex(&to_bytes(&other_chain)) == hex(&to_bytes(&body)) {
+        return Err("transaction the chain id is not part of the signed body".into());
+    }
+    Ok(())
 }
 
 pub fn check_scheme_hash() -> Result<(), String> {
-    let vector = include_str!("../../vectors/scheme.hash_account_and_transfer.json");
-    let seed = seed32(&str_field(vector, "master_seed"));
-    let scheme = num_field(vector, "scheme") as u8;
-    let sender_index = num_field(vector, "sender_index") as u64;
-    let target_index = num_field(vector, "target_index") as u64;
-    let sender_account = derive_with_scheme(&seed, scheme, sender_index)
-        .expect("the conformance scheme derives a spendable account");
-    let target = derive_with_scheme(&seed, scheme, target_index)
-        .expect("the conformance scheme derives a spendable account")
+    let vector = load(include_str!(
+        "../../vectors/scheme.hash_account_and_transfer.json"
+    ))?;
+    let seed = seed32(&vector.str_of("master_seed")?)?;
+    let scheme = vector.u8_of("scheme")?;
+    let sender_account = derive_with_scheme(&seed, scheme, vector.u64_of("sender_index")?)
+        .ok_or_else(|| "the conformance scheme does not derive a sender".to_string())?;
+    let target = derive_with_scheme(&seed, scheme, vector.u64_of("target_index")?)
+        .ok_or_else(|| "the conformance scheme does not derive a target".to_string())?
         .address();
     let sender = sender_account.address();
 
     same(
         "scheme_hash.scheme",
-        sender_account.scheme() as u128,
-        num_field(vector, "scheme"),
+        u128::from(sender_account.scheme()),
+        vector.num_of("scheme")?,
     )?;
     same(
         "scheme_hash.canonical",
         sender_account.address(),
-        str_field(vector, "canonical"),
+        vector.str_of("canonical")?,
     )?;
     same(
         "scheme_hash.sender",
         sender.clone(),
-        str_field(vector, "sender"),
+        vector.str_of("sender")?,
     )?;
     same(
         "scheme_hash.target",
         target.clone(),
-        str_field(vector, "target"),
+        vector.str_of("target")?,
     )?;
 
-    let args = unhex(&str_field(vector, "args"));
+    let args = unhex(&vector.str_of("args")?)?;
     let call = Call::new(target, args);
     let body = Body::with_context(
         sender,
-        num_field(vector, "nonce") as u64,
-        num_field(vector, "gas_limit") as u64,
-        num_field(vector, "fee"),
+        vector.u64_of("nonce")?,
+        vector.u64_of("gas_limit")?,
+        vector.num_of("fee")?,
         call,
         0,
         qtv_tx::LOCAL_CHAIN_ID,
@@ -214,66 +262,79 @@ pub fn check_scheme_hash() -> Result<(), String> {
     same(
         "scheme_hash.body_bytes",
         hex(&to_bytes(&body)),
-        str_field(vector, "body_bytes"),
+        vector.str_of("body_bytes")?,
     )?;
 
     let wrapper = try_sign(&sender_account, &body)
         .ok_or_else(|| "the vector addresses do not parse".to_string())?;
     same(
         "scheme_hash.signed_scheme",
-        wrapper.scheme() as u128,
-        num_field(vector, "scheme"),
+        u128::from(wrapper.scheme()),
+        vector.num_of("scheme")?,
     )?;
-    same(
-        "scheme_hash.tx_id",
-        wrapper.id(),
-        str_field(vector, "tx_id"),
-    )
+    same("scheme_hash.tx_id", wrapper.id(), vector.str_of("tx_id")?)
 }
 
 pub fn check_idfmt() -> Result<(), String> {
-    let vector = include_str!("../../vectors/idfmt.families.json");
-    let input = unhex(&str_field(vector, "input"));
+    let vector = load(include_str!("../../vectors/idfmt.families.json"))?;
+    let input = unhex(&vector.str_of("input")?)?;
+    let render = |label: &str, rendered: Result<String, qtv_idfmt::Error>| {
+        rendered.map_err(|_| format!("{label} does not render"))
+    };
     same(
         "idfmt.q1",
-        qtv_idfmt::render_address(&input).unwrap(),
-        str_field(vector, "q1"),
+        render("idfmt.q1", qtv_idfmt::render_address(&input))?,
+        vector.str_of("q1")?,
     )?;
     same(
         "idfmt.q2",
-        qtv_idfmt::render_secret(&input).unwrap(),
-        str_field(vector, "q2"),
+        render("idfmt.q2", qtv_idfmt::render_secret(&input))?,
+        vector.str_of("q2")?,
     )?;
     same(
         "idfmt.qtx",
-        qtv_idfmt::render_tx(&input).unwrap(),
-        str_field(vector, "qtx"),
+        render("idfmt.qtx", qtv_idfmt::render_tx(&input))?,
+        vector.str_of("qtx")?,
     )?;
     same(
         "idfmt.qbk",
-        qtv_idfmt::render_block(&input).unwrap(),
-        str_field(vector, "qbk"),
+        render("idfmt.qbk", qtv_idfmt::render_block(&input))?,
+        vector.str_of("qbk")?,
     )?;
     same(
         "idfmt.qst",
-        qtv_idfmt::render_state(&input).unwrap(),
-        str_field(vector, "qst"),
+        render("idfmt.qst", qtv_idfmt::render_state(&input))?,
+        vector.str_of("qst")?,
     )?;
     same(
         "idfmt.qcid",
-        qtv_idfmt::render_cid(&input).unwrap(),
-        str_field(vector, "qcid"),
+        render("idfmt.qcid", qtv_idfmt::render_cid(&input))?,
+        vector.str_of("qcid")?,
     )?;
     same(
         "idfmt.qpf",
-        qtv_idfmt::render_proof(&input).unwrap(),
-        str_field(vector, "qpf"),
-    )
+        render("idfmt.qpf", qtv_idfmt::render_proof(&input))?,
+        vector.str_of("qpf")?,
+    )?;
+    let q1 = vector.str_of("q1")?;
+    let parsed =
+        qtv_idfmt::parse_address(&q1).map_err(|_| "idfmt.q1 does not parse back".to_string())?;
+    same("idfmt.q1.roundtrip", parsed, input.clone())?;
+    let mut flipped: Vec<char> = q1.chars().collect();
+    let last = flipped.len() - 1;
+    flipped[last] = if flipped[last] == 'Q' { 'P' } else { 'Q' };
+    let flipped: String = flipped.into_iter().collect();
+    if qtv_idfmt::parse_address(&flipped).is_ok() {
+        return Err("idfmt.q1 accepts an address with a broken checksum".into());
+    }
+    Ok(())
 }
 
 pub fn check_hostile() -> Result<(), String> {
-    let hex_hash = include_str!("../../vectors/hostile/idfmt.hex_hash_rejected.json");
-    let offered = str_field(hex_hash, "input");
+    let hex_hash = load(include_str!(
+        "../../vectors/hostile/idfmt.hex_hash_rejected.json"
+    ))?;
+    let offered = hex_hash.str_of("input")?;
     let refused = qtv_idfmt::parse_address(&offered).is_err()
         && qtv_idfmt::parse_secret(&offered).is_err()
         && qtv_idfmt::parse_tx(&offered).is_err()
@@ -285,8 +346,10 @@ pub fn check_hostile() -> Result<(), String> {
         return Err("hostile.hex_hash was parsed by an identifier family".into());
     }
 
-    let floor = include_str!("../../vectors/hostile/address.below_floor_rejected.json");
-    let payload = unhex(&str_field(floor, "payload"));
+    let floor = load(include_str!(
+        "../../vectors/hostile/address.below_floor_rejected.json"
+    ))?;
+    let payload = unhex(&floor.str_of("payload")?)?;
     if payload.len() >= qtv_idfmt::KEY_FLOOR {
         return Err("hostile.floor payload reaches the floor".into());
     }
@@ -294,61 +357,17 @@ pub fn check_hostile() -> Result<(), String> {
         return Err("hostile.floor payload rendered below the floor".into());
     }
 
-    let vector = include_str!("../../vectors/hostile/crypto.classical_not_sha3.json");
+    let vector = load(include_str!(
+        "../../vectors/hostile/crypto.classical_not_sha3.json"
+    ))?;
     let recomputed = hex(&sha3::sha3_256(b""));
     same(
         "hostile.sha3_empty",
         recomputed.clone(),
-        str_field(vector, "sha3_256_empty"),
+        vector.str_of("sha3_256_empty")?,
     )?;
-    let classical = str_field(vector, "classical256_empty");
-    if recomputed == classical {
+    if recomputed == vector.str_of("classical256_empty")? {
         return Err("hostile.vector the stack digest equals the classical digest".into());
-    }
-    Ok(())
-}
-
-pub fn check_bridge() -> Result<(), String> {
-    let commingle =
-        include_str!("../../vectors/hostile/bridge.same_symbol_commingling_rejected.json");
-    let symbol = str_field(commingle, "symbol");
-    let prefix = format!("q{symbol}.");
-    if !str_field(commingle, "left_tag").starts_with(&prefix)
-        || !str_field(commingle, "right_tag").starts_with(&prefix)
-    {
-        return Err("bridge.same_symbol a tag does not carry the shared symbol".into());
-    }
-    if str_field(commingle, "left_tag") == str_field(commingle, "right_tag") {
-        return Err("bridge.same_symbol two origins share one tag".into());
-    }
-    if str_field(commingle, "left_origin") == str_field(commingle, "right_origin") {
-        return Err("bridge.same_symbol the two origins are not distinct".into());
-    }
-    if str_field(commingle, "expected") != "rejected" {
-        return Err("bridge.same_symbol commingling is not marked rejected".into());
-    }
-
-    let airlock =
-        include_str!("../../vectors/hostile/bridge.non_airlock_artifact_unparseable.json");
-    let artifact = str_field(airlock, "artifact_kind");
-    if artifact == str_field(airlock, "airlock_form_one")
-        || artifact == str_field(airlock, "airlock_form_two")
-    {
-        return Err("bridge.airlock the hostile artifact is actually an Airlock form".into());
-    }
-    if str_field(airlock, "expected") != "unparseable" {
-        return Err("bridge.airlock the non Airlock artifact is not marked unparseable".into());
-    }
-
-    let stake = include_str!("../../vectors/hostile/bridge.bridged_asset_as_stake_rejected.json");
-    if str_field(stake, "stake_asset_origin").is_empty() {
-        return Err("bridge.stake the staked asset carries no origin tag".into());
-    }
-    if str_field(stake, "stake_asset_tag") == str_field(stake, "native_asset") {
-        return Err("bridge.stake the staked asset is the native asset, not a bridged one".into());
-    }
-    if str_field(stake, "expected") != "rejected" {
-        return Err("bridge.stake the bridged asset as stake is not marked rejected".into());
     }
     Ok(())
 }
@@ -359,6 +378,5 @@ pub fn check_all() -> Result<(), String> {
     check_transaction()?;
     check_scheme_hash()?;
     check_idfmt()?;
-    check_hostile()?;
-    check_bridge()
+    check_hostile()
 }

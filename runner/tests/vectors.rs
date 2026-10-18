@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use qtv_conformance_runner::{
-    check_address, check_bridge, check_codec, check_hostile, check_idfmt, check_scheme_hash,
-    check_transaction,
+    check_address, check_codec, check_hostile, check_idfmt, check_scheme_hash, check_transaction,
 };
 
 #[test]
@@ -36,12 +35,19 @@ fn hostile() {
     check_hostile().unwrap();
 }
 
-#[test]
-fn bridge() {
-    check_bridge().unwrap();
-}
-
 const UNCHECKED_HERE: &[(&str, &str)] = &[
+    (
+        "hostile/bridge.same_symbol_commingling_rejected.json",
+        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
+    ),
+    (
+        "hostile/bridge.non_airlock_artifact_unparseable.json",
+        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
+    ),
+    (
+        "hostile/bridge.bridged_asset_as_stake_rejected.json",
+        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
+    ),
     (
         "fee.in_band_at_several_prices.json",
         "no fee crate is a dependency of this runner",
