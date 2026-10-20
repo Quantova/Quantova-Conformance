@@ -4,13 +4,27 @@
 use qtv_account::{derive, derive_with_scheme};
 use qtv_codec::{from_bytes, to_bytes};
 use qtv_crypto::sha3;
-use qtv_tx::{try_sign, Body, Call};
+use qtv_tx::{Body, Call, Wrapper};
 
 pub mod json;
 
 use json::Json;
 
 const VECTOR_GENESIS: [u8; 32] = [0u8; 32];
+
+#[allow(deprecated)]
+fn reference_sign(
+    account: &qtv_account::Account,
+    body: &Body,
+    genesis: &[u8; 32],
+) -> Option<Wrapper> {
+    if qtv_idfmt::parse_address(body.sender()).is_err()
+        || qtv_idfmt::parse_address(body.call().target()).is_err()
+    {
+        return None;
+    }
+    Some(qtv_tx::sign(account, body, genesis))
+}
 
 fn hex(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len() * 2);
@@ -176,13 +190,13 @@ pub fn check_transaction() -> Result<(), String> {
         vector.str_of("body_bytes")?,
     )?;
 
-    let wrapper = try_sign(&sender_account, &body, &VECTOR_GENESIS)
+    let wrapper = reference_sign(&sender_account, &body, &VECTOR_GENESIS)
         .ok_or_else(|| "the vector addresses do not parse".to_string())?;
     same("transaction.tx_id", wrapper.id(), vector.str_of("tx_id")?)?;
 
     let bounded = vector.get("bounded")?;
     let deadline = body.clone().valid_until(bounded.u64_of("valid_until")?);
-    let signed = try_sign(&sender_account, &deadline, &VECTOR_GENESIS)
+    let signed = reference_sign(&sender_account, &deadline, &VECTOR_GENESIS)
         .ok_or_else(|| "the bounded vector addresses do not parse".to_string())?;
     same(
         "transaction.bounded.tx_hex",
@@ -267,7 +281,7 @@ pub fn check_scheme_hash() -> Result<(), String> {
         vector.str_of("body_bytes")?,
     )?;
 
-    let wrapper = try_sign(&sender_account, &body, &VECTOR_GENESIS)
+    let wrapper = reference_sign(&sender_account, &body, &VECTOR_GENESIS)
         .ok_or_else(|| "the vector addresses do not parse".to_string())?;
     same(
         "scheme_hash.signed_scheme",
