@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use qtv_conformance_runner::{
-    check_address, check_codec, check_hostile, check_idfmt, check_scheme_hash, check_transaction,
+    check_address, check_bridge, check_codec, check_consensus_scheme, check_fee, check_governance,
+    check_hostile, check_idfmt, check_scheme_hash, check_scheme_registry, check_transaction,
+    check_vm,
 };
 
 #[test]
@@ -35,56 +37,37 @@ fn hostile() {
     check_hostile().unwrap();
 }
 
-const UNCHECKED_HERE: &[(&str, &str)] = &[
-    (
-        "hostile/bridge.same_symbol_commingling_rejected.json",
-        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
-    ),
-    (
-        "hostile/bridge.non_airlock_artifact_unparseable.json",
-        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
-    ),
-    (
-        "hostile/bridge.bridged_asset_as_stake_rejected.json",
-        "the bridge is off until mainnet and no bridge crate is a dependency of this runner",
-    ),
-    (
-        "fee.in_band_at_several_prices.json",
-        "no fee crate is a dependency of this runner",
-    ),
-    (
-        "fee.stale_rate_clamps.json",
-        "no fee crate is a dependency of this runner",
-    ),
-    (
-        "vm.scratch_memory.json",
-        "no machine crate is a dependency of this runner",
-    ),
-    (
-        "hostile/fee.over_band_unenactable.json",
-        "no fee crate is a dependency of this runner",
-    ),
-    (
-        "hostile/scheme.unknown_id_unparseable.json",
-        "no scheme registry crate is a dependency of this runner",
-    ),
-    (
-        "hostile/consensus.non_mldsa_attestation_rejected.json",
-        "no attestation crate is a dependency of this runner",
-    ),
-    (
-        "hostile/governance.emergency_moves_funds.json",
-        "mirrored from QONCORD and enforced by the constitutional gate there",
-    ),
-    (
-        "hostile/governance.over_ceiling_mint.json",
-        "mirrored from QONCORD and enforced by the constitutional gate there",
-    ),
-    (
-        "hostile/governance.recovery_from_unfrozen_stake.json",
-        "mirrored from QONCORD and enforced by the constitutional gate there",
-    ),
-];
+#[test]
+fn fee() {
+    check_fee().unwrap();
+}
+
+#[test]
+fn vm() {
+    check_vm().unwrap();
+}
+
+#[test]
+fn scheme_registry() {
+    check_scheme_registry().unwrap();
+}
+
+#[test]
+fn consensus_scheme() {
+    check_consensus_scheme().unwrap();
+}
+
+#[test]
+fn bridge() {
+    check_bridge().unwrap();
+}
+
+#[test]
+fn governance() {
+    check_governance().unwrap();
+}
+
+const UNCHECKED_HERE: &[(&str, &str)] = &[];
 
 #[test]
 fn every_vector_is_either_checked_here_or_says_why_not() {

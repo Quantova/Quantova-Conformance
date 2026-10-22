@@ -14,6 +14,12 @@ qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f
 qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f183c25c2a56e8ab93758c7552d5c29328942c08" }
 qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f183c25c2a56e8ab93758c7552d5c29328942c08" }
 qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "4e37c52984740f345f96e2c8536803bce5f3b805" }
+qtv-node = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f183c25c2a56e8ab93758c7552d5c29328942c08" }
+qtv-staking = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "f183c25c2a56e8ab93758c7552d5c29328942c08" }
+qtv-vm = { git = "https://github.com/Quantova/QVM.git", rev = "94fe7e8" }
+qtv-constitution = { git = "https://github.com/Quantova/QONCORD.git", rev = "77e5b09" }
+qlc-airlock = { git = "https://github.com/Quantova/Q-Lightclient.git", rev = "b2842ae" }
+qlc-stark = { git = "https://github.com/Quantova/Q-Lightclient.git", rev = "b2842ae" }
 
 [profile.dev.package.qtv-crypto]
 opt-level = 3

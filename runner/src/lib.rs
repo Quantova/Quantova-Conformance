@@ -38,6 +38,9 @@ fn unhex(text: &str) -> Result<Vec<u8>, String> {
     if !text.len().is_multiple_of(2) {
         return Err("a hex field has an odd length".to_string());
     }
+    if !text.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("a hex field holds a non hex digit".to_string());
+    }
     (0..text.len() / 2)
         .map(|i| {
             u8::from_str_radix(&text[2 * i..2 * i + 2], 16)
@@ -208,6 +211,26 @@ pub fn check_transaction() -> Result<(), String> {
         signed.id(),
         bounded.str_of("tx_id")?,
     )?;
+    same(
+        "transaction.bounded.transfer_fee",
+        u128::from(qtv_node::fee::FeeParams::devnet().transfer_fee()),
+        bounded.num_of("transfer_fee")?,
+    )?;
+    let key = sender_account.public_key();
+    if !qtv_tx::verify(&wrapper, key, &VECTOR_GENESIS)
+        || !qtv_tx::verify(&signed, key, &VECTOR_GENESIS)
+    {
+        return Err("transaction the reference signatures do not verify".into());
+    }
+    if qtv_tx::verify(&signed, key, &[0x5au8; 32]) {
+        return Err("transaction a signature verifies under another genesis".into());
+    }
+    let mut tampered = signed.signature().to_vec();
+    tampered[0] ^= 1;
+    let changed = Wrapper::new(signed.body().clone(), signed.scheme(), tampered);
+    if qtv_tx::verify(&changed, key, &VECTOR_GENESIS) {
+        return Err("transaction a changed signature still verifies".into());
+    }
     if signed.id() == wrapper.id() {
         return Err("transaction.bounded the deadline does not change the signed bytes".into());
     }
@@ -394,5 +417,255 @@ pub fn check_all() -> Result<(), String> {
     check_transaction()?;
     check_scheme_hash()?;
     check_idfmt()?;
+    check_fee()?;
+    check_vm()?;
+    check_scheme_registry()?;
+    check_consensus_scheme()?;
+    check_bridge()?;
+    check_governance()?;
     check_hostile()
+}
+
+fn usd_micro_of(fee: u64, params: &qtv_node::fee::FeeParams) -> u128 {
+    u128::from(fee) * params.rate_micro_usd_per_qtov / params.native_unit
+}
+
+fn fee_params(rate_micro_usd_per_qtov: u128) -> qtv_node::fee::FeeParams {
+    let mut params = qtv_node::fee::FeeParams::devnet();
+    params.rate_micro_usd_per_qtov = rate_micro_usd_per_qtov;
+    params.native_unit = 1_000_000_000;
+    params.max_fee_native = u64::MAX;
+    params
+}
+
+pub fn check_fee() -> Result<(), String> {
+    use qtv_node::fee::{MICRO_USD_CEILING, MICRO_USD_FLOOR};
+    let band = load(include_str!(
+        "../../vectors/fee.in_band_at_several_prices.json"
+    ))?;
+    same(
+        "fee.band_min",
+        MICRO_USD_FLOOR,
+        band.num_of("fee_micro_usd_min")?,
+    )?;
+    same(
+        "fee.band_max",
+        MICRO_USD_CEILING,
+        band.num_of("fee_micro_usd_max")?,
+    )?;
+    if band.str_of("expected")? != "every computed fee is within the band" {
+        return Err("fee.in_band the vector changed its expectation".into());
+    }
+    let rates = match band.get("rates_micro_usd_per_native")? {
+        Json::Array(items) => items
+            .iter()
+            .map(|item| match item {
+                Json::Str(s) => s
+                    .parse::<u128>()
+                    .map_err(|_| "fee.in_band a rate is not a whole number".to_string()),
+                _ => Err("fee.in_band a rate is not a string".to_string()),
+            })
+            .collect::<Result<Vec<u128>, String>>()?,
+        _ => return Err("fee.in_band the rates are not a list".into()),
+    };
+    if rates.is_empty() {
+        return Err("fee.in_band the vector names no rate".into());
+    }
+    for rate in rates {
+        let params = fee_params(rate);
+        let usd = usd_micro_of(params.transfer_fee(), &params);
+        if !(MICRO_USD_FLOOR - 1..=MICRO_USD_CEILING).contains(&usd) {
+            return Err(format!(
+                "fee.in_band at rate {rate} the transfer fee is {usd} micro USD"
+            ));
+        }
+    }
+
+    let stale = load(include_str!("../../vectors/fee.stale_rate_clamps.json"))?;
+    if stale.str_of("expected")? != "clamped within the band, never above" {
+        return Err("fee.stale_rate_clamps the vector changed its expectation".into());
+    }
+    let params = fee_params(1_000_000);
+    for asked in [0u128, 1, 499, 500, 750, 1000, 1001, 5_000, u128::MAX] {
+        let usd = usd_micro_of(params.native_fee(asked), &params);
+        if usd > MICRO_USD_CEILING || usd + 1 < MICRO_USD_FLOOR {
+            return Err(format!(
+                "fee.stale_rate_clamps {asked} micro USD became {usd}"
+            ));
+        }
+    }
+
+    let over = load(include_str!(
+        "../../vectors/hostile/fee.over_band_unenactable.json"
+    ))?;
+    if over.str_of("expected")? != "unenactable" {
+        return Err("fee.over_band the vector changed its expectation".into());
+    }
+    same(
+        "fee.over_band.ceiling",
+        MICRO_USD_CEILING,
+        over.num_of("ceiling_micro_usd")?,
+    )?;
+    let asked = over.num_of("fee_micro_usd")?;
+    if params.native_fee(asked) > params.ceiling_fee()
+        || usd_micro_of(params.native_fee(asked), &params) > MICRO_USD_CEILING
+    {
+        return Err("fee.over_band a fee above the ceiling was produced".into());
+    }
+    Ok(())
+}
+
+fn vm_run(src: &str) -> Result<Result<qtv_vm::interp::Outcome, qtv_vm::interp::Fault>, String> {
+    use qtv_vm::container::{selector, Container, Entry, StateAccess};
+    let code = qtv_vm::asm::assemble(src).map_err(|e| format!("vm assemble {e:?}"))?;
+    let sel = selector("probe()");
+    let container = Container::new(
+        code,
+        vec![],
+        vec![Entry {
+            selector: sel,
+            offset: 0,
+            access: StateAccess::default(),
+        }],
+    );
+    let interp = qtv_vm::interp::Interpreter::for_entry(&container, sel, 1_000_000)
+        .map_err(|e| format!("vm entry {e:?}"))?;
+    Ok(interp.run())
+}
+
+pub fn check_vm() -> Result<(), String> {
+    use qtv_vm::interp::Fault;
+    let vector = load(include_str!("../../vectors/vm.scratch_memory.json"))?;
+    same(
+        "vm.scratch_size",
+        qtv_vm::state::MEM_BYTES as u128,
+        vector.num_of("scratch_size_bytes")?,
+    )?;
+    let outcome = vm_run("LDI r1, 65528\nMLOAD r0, r1\nHALT")?
+        .map_err(|e| format!("vm.zeroed faulted {e:?}"))?;
+    if outcome.regs[0] != 0 {
+        return Err("vm.zeroed the scratch memory is not zero at entry".into());
+    }
+    if vm_run("LDI r1, 65536\nMLOAD r0, r1\nHALT")? != Err(Fault::BadMemory) {
+        return Err("vm.bounds a read past the scratch memory did not fault".into());
+    }
+    Ok(())
+}
+
+pub fn check_scheme_registry() -> Result<(), String> {
+    let vector = load(include_str!(
+        "../../vectors/hostile/scheme.unknown_id_unparseable.json"
+    ))?;
+    let id = u8::try_from(vector.num_of_hex("scheme_id")?).map_err(|_| "scheme id out of range")?;
+    if qtv_tx::scheme_supported(id) || qtv_account::derive_with_scheme(&[7u8; 32], id, 0).is_some()
+    {
+        return Err("scheme.unknown an unregistered scheme is accepted".into());
+    }
+    Ok(())
+}
+
+pub fn check_consensus_scheme() -> Result<(), String> {
+    let vector = load(include_str!(
+        "../../vectors/hostile/consensus.non_mldsa_attestation_rejected.json"
+    ))?;
+    let id = u8::try_from(vector.num_of_hex("scheme_id")?).map_err(|_| "scheme id out of range")?;
+    let account = qtv_account::derive_with_scheme(&[7u8; 32], id, 0)
+        .ok_or("consensus.non_mldsa the scheme in the vector does not derive a key")?;
+    if <qtv_crypto::ml_dsa::PublicKey>::try_from(account.public_key()).is_ok() {
+        return Err("consensus.non_mldsa a non lattice key fits an attestation key".into());
+    }
+    Ok(())
+}
+
+pub fn check_bridge() -> Result<(), String> {
+    use qtv_node::ledger::Ledger;
+    let stake = load(include_str!(
+        "../../vectors/hostile/bridge.bridged_asset_as_stake_rejected.json"
+    ))?;
+    if stake.str_of("expected")? != "rejected" {
+        return Err("bridge.stake the vector changed its expectation".into());
+    }
+    let holder = derive(&[9u8; 32], 0);
+    let address = holder.address();
+    let id: [u8; 32] = qtv_idfmt::parse_address(&address)
+        .map_err(|_| "bridge.stake address")?
+        .try_into()
+        .map_err(|_| "bridge.stake address length")?;
+    let mut ledger = Ledger::new();
+    if !ledger.mint_asset(&[0xe7u8; 32], &id, 1_000_000_000_000_000_000) {
+        return Err("bridge.stake the bridged balance could not be minted".into());
+    }
+    if ledger.bond(&address, qtv_staking::MIN_STAKE, 0) {
+        return Err("bridge.stake a holder of only a bridged asset bonded stake".into());
+    }
+
+    let mix = load(include_str!(
+        "../../vectors/hostile/bridge.same_symbol_commingling_rejected.json"
+    ))?;
+    if mix.str_of("expected")? != "rejected"
+        || mix.str_of("left_tag")? == mix.str_of("right_tag")?
+    {
+        return Err("bridge.commingling the vector changed its expectation".into());
+    }
+    let mut ledger = Ledger::new();
+    let (eth, bsc) = ([0xe7u8; 32], [0xb5u8; 32]);
+    ledger.mint_asset(&eth, &id, 500);
+    if ledger.asset_balance_by_issuer(&bsc, &id) != 0
+        || ledger.asset_balance_by_issuer(&eth, &id) != 500
+    {
+        return Err("bridge.commingling one symbol from two bridges shares a balance".into());
+    }
+
+    let foreign = load(include_str!(
+        "../../vectors/hostile/bridge.non_airlock_artifact_unparseable.json"
+    ))?;
+    if foreign.str_of("expected")? != "unparseable" {
+        return Err("bridge.airlock the vector changed its expectation".into());
+    }
+    let classical = vec![0x30u8, 0x44, 0x02, 0x20, 0xc1, 0xc1, 0xc1, 0xc1];
+    if qlc_airlock::parse_ingress(&classical, qlc_stark::QUANTOVA_DEST_CHAIN_ID).is_ok() {
+        return Err("bridge.airlock a classical signature parsed as an ingress".into());
+    }
+    Ok(())
+}
+
+pub fn check_governance() -> Result<(), String> {
+    use qtv_constitution::{check_enactment, ConstitutionViolation, ProposedAction};
+    let emergency = load(include_str!(
+        "../../vectors/hostile/governance.emergency_moves_funds.json"
+    ))?;
+    let mint = load(include_str!(
+        "../../vectors/hostile/governance.over_ceiling_mint.json"
+    ))?;
+    let seize = load(include_str!(
+        "../../vectors/hostile/governance.recovery_from_unfrozen_stake.json"
+    ))?;
+    let a = mint.get("action")?;
+    let over = check_enactment(&ProposedAction::Mint {
+        amount: a.num_of("amount")?,
+        epoch_minted: a.num_of("epoch_minted")?,
+        epoch_ceiling: a.num_of("epoch_ceiling")?,
+    });
+    same(
+        "governance.over_ceiling",
+        over,
+        Err(ConstitutionViolation::OverMintCeiling),
+    )?;
+    let moves = emergency.get("action")?.bool_of("moves_value")?;
+    same(
+        "governance.emergency",
+        check_enactment(&ProposedAction::EmergencyPause { moves_value: moves }),
+        Err(ConstitutionViolation::EmergencyMovesValue),
+    )?;
+    let s = seize.get("action")?;
+    same(
+        "governance.unfrozen_stake",
+        check_enactment(&ProposedAction::JusticeSeize {
+            targets_validator_stake: s.bool_of("targets_validator_stake")?,
+            holder_frozen: s.bool_of("holder_frozen")?,
+            within_bundle: s.bool_of("within_bundle")?,
+        }),
+        Err(ConstitutionViolation::StakeNotFrozen),
+    )?;
+    Ok(())
 }

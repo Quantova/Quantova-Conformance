@@ -74,6 +74,24 @@ impl Json {
     pub fn u8_of(&self, key: &str) -> Result<u8, String> {
         u8::try_from(self.num_of(key)?).map_err(|_| format!("field {key} does not fit 8 bits"))
     }
+
+    pub fn bool_of(&self, key: &str) -> Result<bool, String> {
+        match self.get(key)? {
+            Json::Bool(b) => Ok(*b),
+            _ => Err(format!("field {key} is not true or false")),
+        }
+    }
+
+    pub fn num_of_hex(&self, key: &str) -> Result<u128, String> {
+        let text = self.str_of(key)?;
+        let digits = text
+            .strip_prefix("0x")
+            .ok_or_else(|| format!("field {key} is not 0x hex"))?;
+        if digits.is_empty() || !digits.bytes().all(|c| c.is_ascii_hexdigit()) {
+            return Err(format!("field {key} is not 0x hex"));
+        }
+        u128::from_str_radix(digits, 16).map_err(|_| format!("field {key} is out of range"))
+    }
 }
 
 struct Parser<'a> {
