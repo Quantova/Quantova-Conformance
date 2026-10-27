@@ -9,14 +9,14 @@ license = "Apache-2.0 OR MIT"
 publish = false
 
 [dependencies]
-qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
-qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
-qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
-qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
+qtv-idfmt = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
+qtv-account = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
+qtv-codec = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
+qtv-tx = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
 qtv-crypto = { git = "https://github.com/Quantova/Q-Crypto.git", rev = "04e5ae26a089df4e4cc8f20f3973b7cbbee594e3" }
-qtv-node = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
-qtv-staking = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "806cdd956e277cfed818ef30311ecec0b84b003c" }
-qtv-vm = { git = "https://github.com/Quantova/QVM.git", rev = "32825549c2e4fb2238470a04664cfa0d9cbafc2b" }
+qtv-node = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
+qtv-staking = { git = "https://github.com/Quantova/Quantova-Chain.git", rev = "e349230bdd653f7436964a3c6de65af367d638be" }
+qtv-vm = { git = "https://github.com/Quantova/QVM.git", rev = "dd69b022d48b8dbfb36b8d26110d15b160fccff6" }
 qtv-constitution = { git = "https://github.com/Quantova/QONCORD.git", rev = "77e5b09" }
 qlc-airlock = { git = "https://github.com/Quantova/Q-Lightclient.git", rev = "b2842ae" }
 qlc-stark = { git = "https://github.com/Quantova/Q-Lightclient.git", rev = "b2842ae" }
